@@ -678,6 +678,9 @@ func showDogStatus(mgr *dog.Manager, name string) error {
 	fmt.Printf("  State:       %s\n", d.State)
 	if d.Work != "" {
 		fmt.Printf("  Work:        %s\n", d.Work)
+		if d.WorkStartedAt != nil {
+			fmt.Printf("  Working For: %s\n", dogFormatTimeAgo(*d.WorkStartedAt))
+		}
 	} else {
 		fmt.Printf("  Work:        %s\n", style.Dim.Render("(none)"))
 	}

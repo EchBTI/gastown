@@ -84,7 +84,7 @@ func TestDogState_OmitEmptyFields(t *testing.T) {
 		LastActive: time.Now(),
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
-		// Work and Worktrees left empty to test omitempty
+		// Work, WorkStartedAt, and Worktrees left empty to test omitempty
 	}
 
 	data, err := json.Marshal(dogState)
@@ -101,6 +101,9 @@ func TestDogState_OmitEmptyFields(t *testing.T) {
 	if _, exists := raw["work"]; exists {
 		t.Error("Field 'work' should be omitted when empty")
 	}
+	if _, exists := raw["work_started_at"]; exists {
+		t.Error("Field 'work_started_at' should be omitted when zero (idle)")
+	}
 	if _, exists := raw["worktrees"]; exists {
 		t.Error("Field 'worktrees' should be omitted when empty")
 	}
@@ -111,6 +114,71 @@ func TestDogState_OmitEmptyFields(t *testing.T) {
 		if _, exists := raw[field]; !exists {
 			t.Errorf("Required field '%s' should be present", field)
 		}
+	}
+}
+
+func TestDogState_WorkStartedAt(t *testing.T) {
+	now := time.Now().Round(time.Second)
+
+	// When working: work_started_at should be present in JSON
+	working := DogState{
+		Name:          "alpha",
+		State:         StateWorking,
+		Work:          "mol-session-gc",
+		WorkStartedAt: &now,
+		LastActive:    now,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	data, err := json.Marshal(working)
+	if err != nil {
+		t.Fatalf("json.Marshal() error = %v", err)
+	}
+
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+
+	if _, exists := raw["work_started_at"]; !exists {
+		t.Error("Field 'work_started_at' should be present when working")
+	}
+
+	// Round-trip should preserve the timestamp
+	var unmarshaled DogState
+	if err := json.Unmarshal(data, &unmarshaled); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+	if unmarshaled.WorkStartedAt == nil {
+		t.Fatal("WorkStartedAt should not be nil after round-trip when set")
+	}
+	if !unmarshaled.WorkStartedAt.Equal(now) {
+		t.Errorf("WorkStartedAt after round-trip = %v, want %v", *unmarshaled.WorkStartedAt, now)
+	}
+
+	// When idle: work_started_at should be absent (nil pointer, omitempty)
+	idle := DogState{
+		Name:          "alpha",
+		State:         StateIdle,
+		LastActive:    now,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+		WorkStartedAt: nil, // explicitly nil
+	}
+
+	idleData, err := json.Marshal(idle)
+	if err != nil {
+		t.Fatalf("json.Marshal() idle error = %v", err)
+	}
+
+	var idleRaw map[string]interface{}
+	if err := json.Unmarshal(idleData, &idleRaw); err != nil {
+		t.Fatalf("json.Unmarshal() idle error = %v", err)
+	}
+
+	if _, exists := idleRaw["work_started_at"]; exists {
+		t.Error("Field 'work_started_at' should be absent when idle (nil pointer)")
 	}
 }
 

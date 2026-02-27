@@ -301,13 +301,14 @@ func (m *Manager) Get(name string) (*Dog, error) {
 	}
 
 	return &Dog{
-		Name:       name,
-		State:      state.State,
-		Path:       m.dogDir(name),
-		Worktrees:  state.Worktrees,
-		LastActive: state.LastActive,
-		Work:       state.Work,
-		CreatedAt:  state.CreatedAt,
+		Name:          name,
+		State:         state.State,
+		Path:          m.dogDir(name),
+		Worktrees:     state.Worktrees,
+		LastActive:    state.LastActive,
+		Work:          state.Work,
+		WorkStartedAt: state.WorkStartedAt, // nil if idle
+		CreatedAt:     state.CreatedAt,
 	}, nil
 }
 
@@ -360,10 +361,12 @@ func (m *Manager) AssignWork(name, work string) error {
 		return fmt.Errorf("loading state: %w", err)
 	}
 
+	now := time.Now()
 	state.State = StateWorking
 	state.Work = work
-	state.LastActive = time.Now()
-	state.UpdatedAt = time.Now()
+	state.WorkStartedAt = &now
+	state.LastActive = now
+	state.UpdatedAt = now
 
 	return m.saveState(name, state)
 }
@@ -389,10 +392,12 @@ func (m *Manager) ClearWork(name string) error {
 		return fmt.Errorf("loading state: %w", err)
 	}
 
+	now := time.Now()
 	state.State = StateIdle
 	state.Work = ""
-	state.LastActive = time.Now()
-	state.UpdatedAt = time.Now()
+	state.WorkStartedAt = nil // clear when returning to idle
+	state.LastActive = now
+	state.UpdatedAt = now
 
 	return m.saveState(name, state)
 }
