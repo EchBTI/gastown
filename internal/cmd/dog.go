@@ -420,21 +420,23 @@ func runDogList(cmd *cobra.Command, args []string) error {
 
 	if dogListJSON {
 		type DogListItem struct {
-			Name       string            `json:"name"`
-			State      dog.State         `json:"state"`
-			Work       string            `json:"work,omitempty"`
-			LastActive time.Time         `json:"last_active"`
-			Worktrees  map[string]string `json:"worktrees,omitempty"`
+			Name          string            `json:"name"`
+			State         dog.State         `json:"state"`
+			Work          string            `json:"work,omitempty"`
+			WorkStartedAt *time.Time        `json:"work_started_at,omitempty"`
+			LastActive    time.Time         `json:"last_active"`
+			Worktrees     map[string]string `json:"worktrees,omitempty"`
 		}
 
 		var items []DogListItem
 		for _, d := range dogs {
 			items = append(items, DogListItem{
-				Name:       d.Name,
-				State:      d.State,
-				Work:       d.Work,
-				LastActive: d.LastActive,
-				Worktrees:  d.Worktrees,
+				Name:          d.Name,
+				State:         d.State,
+				Work:          d.Work,
+				WorkStartedAt: d.WorkStartedAt,
+				LastActive:    d.LastActive,
+				Worktrees:     d.Worktrees,
 			})
 		}
 
